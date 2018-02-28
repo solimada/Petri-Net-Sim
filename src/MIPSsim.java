@@ -9,15 +9,15 @@ public class MIPSsim {
     private static final String DATAFILE = "datamemory.txt";
     private static final String INSTRUCTIONFILE = "instructions.txt";
 
-    private List<InstructionToken> INM = new ArrayList<InstructionToken>();
-    InstructionToken INB;
-    InstructionToken AIB;
-    InstructionToken SIB;
-    InstructionToken PRB;
-    RegisterToken ADB;
-    RegisterToken REB;
-    private List<RegisterToken> RGF = new ArrayList<RegisterToken>();
-    private List<AddressToken> DAM = new ArrayList<AddressToken>();
+    private List<InstructionToken> INM = new ArrayList<>();
+    InstructionToken INB = null;
+    InstructionToken AIB = null;
+    InstructionToken SIB = null;
+    InstructionToken PRB = null;
+    RegisterToken ADB = null;
+    RegisterToken REB = null;
+    private List<RegisterToken> RGF = new ArrayList<>();
+    private List<AddressToken> DAM = new ArrayList<>();
 
 
 
@@ -37,7 +37,9 @@ public class MIPSsim {
     }
 
     public void readAndDecode(){
-
+        //RegisterToken reg = RGF.
+        InstructionToken temp = INM.remove(0);
+        Map<Instruction,Integer> test = new HashMap<>();
     }
     public void issue(){
 
@@ -63,6 +65,11 @@ public class MIPSsim {
     public void print(){
 
     }
+
+
+    private RegisterToken search(){
+       return null;
+    }
 }
 
 enum Instruction {ADD, SUB, MUL, ST}
@@ -71,7 +78,7 @@ enum Register {R0, R1, R2, R3, R4, R5, R6, R7, R8, R9, R10, R11, R12, R13, R14, 
 class InstructionToken{
     Instruction opcode;
     Register destination;
-    Register source1;
+    String source1;
     String source2;
     boolean isStore = false;
 
@@ -79,7 +86,7 @@ class InstructionToken{
         String temp [] = token.replace("<","").replace(">","").split(",");
         opcode = Instruction.valueOf(temp[0]);
         destination = Register.valueOf(temp[1]);
-        source1 = Register.valueOf(temp[2]);
+        source1 = temp[2];
         source2 = temp[3];
         if(opcode == Instruction.ST){
             isStore = true;
