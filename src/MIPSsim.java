@@ -88,7 +88,17 @@ public class MIPSsim {
     }
 
     public void asu(){
-        
+        write(1);
+        if(AIB != null && AIB.opcode == Instruction.ADD){
+            REB_reg[1] = AIB.destination;
+            REB_value[1] = AIB.data1 + AIB.data2;
+        } else if (AIB != null && AIB.opcode == Instruction.SUB){
+            REB_reg[1] = AIB.destination;
+            REB_value[1] = AIB.data1 - AIB.data2;
+        } else {
+            REB_reg[1] = null;
+            REB_value[1] = 0;
+        }
     }
 
     public void mlu1(){
