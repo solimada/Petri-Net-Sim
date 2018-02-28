@@ -1,24 +1,45 @@
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.util.*;
 
 public class MIPSsim {
 
-    public static final String REGISTERFILE = "registers.txt";
-    public static final String DATAFILE = "datamemory.txt";
-    public static final String INSTRUCTIONFILE = "instructions.txt";
+    private static final String REGISTERFILE = "registers.txt";
+    private static final String DATAFILE = "datamemory.txt";
+    private static final String INSTRUCTIONFILE = "instructions.txt";
 
-    private List<InstructionToken> instructionMemory = new ArrayList<InstructionToken>();
-    private List<RegisterToken> registerFile = new ArrayList<RegisterToken>();
-    private List<AddressToken> dataMemory = new ArrayList<AddressToken>();
+    private List<InstructionToken> INM = new ArrayList<InstructionToken>();
+    InstructionToken INB;
+    InstructionToken AIB;
+    InstructionToken SIB;
+    InstructionToken PRB;
+    RegisterToken ADB;
+    RegisterToken REB;
+    private List<RegisterToken> RGF = new ArrayList<RegisterToken>();
+    private List<AddressToken> DAM = new ArrayList<AddressToken>();
+
+
 
 
     public MIPSsim(){
-
+        try {
+            List<String> temp = Files.readAllLines(Paths.get(REGISTERFILE));
+            for (String t:temp) { RGF.add(new RegisterToken(t)); }
+            temp = Files.readAllLines(Paths.get(DATAFILE));
+            for (String t:temp) { DAM.add(new AddressToken(t)); }
+            temp = Files.readAllLines(Paths.get(INSTRUCTIONFILE));
+            for (String t:temp) { INM.add(new InstructionToken(t)); }
+        } catch (IOException e) {
+            System.out.println("Failed to parse files");
+            e.printStackTrace();
+        }
     }
 
     public void readAndDecode(){
 
     }
-    public void Issue(){
+    public void issue(){
 
     }
     public void asu(){
@@ -37,6 +58,9 @@ public class MIPSsim {
 
     }
     public void write(){
+
+    }
+    public void print(){
 
     }
 }
