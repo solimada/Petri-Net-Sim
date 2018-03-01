@@ -1,5 +1,6 @@
-import java.io.IOException;
+import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
@@ -10,6 +11,7 @@ public class MIPSsim {
     private static final String INSTRUCTIONFILE = "instructions.txt";
 
     int stepNumber = 0;
+    boolean writeLock = true;
 
     private List<InstructionToken> INM = new ArrayList<>();
 
@@ -27,7 +29,10 @@ public class MIPSsim {
     //private List<AddressToken> DAM = new ArrayList<>();
     Map <Integer,Integer> DAM = new HashMap<>();
 
-
+    public static void main(String [] args){
+        MIPSsim m = new MIPSsim();
+        m.simulate();
+    }
 
 
     public MIPSsim(){
@@ -49,13 +54,17 @@ public class MIPSsim {
         } catch (IOException e) {
             System.out.println("Failed to parse files");
             e.printStackTrace();
+            System.exit(0);
         }
+        print();
     }
 
     public void simulate(){
-        print(); // print step 0
-        readAndDecode();
-        print();
+        do {
+            readAndDecode();
+            print();
+        } while(INB != null || AIB != null || SIB != null || PRB != null || ADB_reg != null ||
+                REB_reg[0] != null || REB_reg[1] != null);
     }
 
     private void readAndDecode(){
@@ -152,15 +161,14 @@ public class MIPSsim {
 
         System.out.print("INM:");
         int i = 0;
+        String s = "";
         for (InstructionToken t:INM) {
-            if (i < 15) {
-                System.out.print("<" + t.opcode + "," + t.destination + "," + t.source1 + "," + t.source2 + ">,");
-            } else {
-                System.out.print("<" + t.opcode + "," + t.destination + "," + t.source1 + "," + t.source2 + ">");
-                break;
-            }
-
-            ++i;
+            s += "<" + t.opcode + "," + t.destination + "," + t.source1 + "," + t.source2 + ">,";
+        }
+        if (s.length() > 0) {
+            System.out.println(s.substring(0, s.length() - 1));
+        } else {
+            System.out.println();
         }
 
         System.out.print("INB:");
@@ -185,24 +193,28 @@ public class MIPSsim {
 
         System.out.print("REB:");
         if (REB_reg[0] != null && REB_reg[1] != null){
-            System.out.println("<" + REB_reg[0] + "," + REB_reg[0] + ">,<" + REB_reg[1] + "," + REB_reg[1] + ">");
+            System.out.println("<" + REB_reg[0] + "," + REB_value[0] + ">,<" + REB_reg[1] + "," + REB_value[1] + ">");
         } else if (REB_reg[0] != null) {
-            System.out.println("<" + REB_reg[0] + "," + REB_reg[0] + ">");
+            System.out.println("<" + REB_reg[0] + "," + REB_value[0] + ">");
         } else if (REB_reg[1] != null) {
-            System.out.println("<" + REB_reg[1] + "," + REB_reg[1] + ">");
+            System.out.println("<" + REB_reg[1] + "," + REB_value[1] + ">");
         } else {
             System.out.println();
         }
 
         System.out.print("RGF:");
-        String s = "";
+        s = "";
         for (Register r: Register.values()){
             Integer value = RGF.get(r);
             if (value != null){
                 s += "<" + r + "," + value + ">,";
             }
         }
-        System.out.println(s.substring(0,s.length()-1)); // removes last comma
+        if (s.length() > 0) {
+            System.out.println(s.substring(0, s.length() - 1)); // removes last comma
+        } else {
+            System.out.println();
+        }
 
         System.out.print("DAM:");
         s = "";
@@ -212,7 +224,12 @@ public class MIPSsim {
                 s += "<" + i + "," + value + ">,";
             }
         }
-        System.out.println(s.substring(0,s.length()-1)); // removes last comma
+        if (s.length() > 0) {
+            System.out.println(s.substring(0, s.length() - 1)); // removes last comma
+        } else {
+            System.out.println();
+        }
+
 
         System.out.println();
     }
@@ -245,7 +262,7 @@ class InstructionToken{
     }
 
     public String toString(){
-        return "<" + opcode + "," + destination + "," + source1 + "," + source2 + ">";
+        return "<" + opcode + "," + destination + "," + data1 + "," + data2 + ">";
     }
 
 }
