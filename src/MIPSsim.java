@@ -6,12 +6,13 @@ import java.util.*;
 
 public class MIPSsim {
 
+    PrintWriter writer;
+
     private static final String REGISTERFILE = "registers.txt";
     private static final String DATAFILE = "datamemory.txt";
     private static final String INSTRUCTIONFILE = "instructions.txt";
 
     int stepNumber = 0;
-    boolean writeLock = true;
 
     private List<InstructionToken> INM = new ArrayList<>();
 
@@ -32,11 +33,13 @@ public class MIPSsim {
     public static void main(String [] args){
         MIPSsim m = new MIPSsim();
         m.simulate();
+        m.writer.close();
     }
 
 
     public MIPSsim(){
         try {
+            writer = new PrintWriter("output.txt");
             List<String> temp = Files.readAllLines(Paths.get(REGISTERFILE));
             for (String t:temp) {
                 String [] tokenAsString = t.replace("<","").replace(">","").split(",");
@@ -52,7 +55,7 @@ public class MIPSsim {
             temp = Files.readAllLines(Paths.get(INSTRUCTIONFILE));
             for (String t:temp) { INM.add(new InstructionToken(t)); }
         } catch (IOException e) {
-            System.out.println("Failed to parse files");
+            writer.println("Failed to parse files");
             e.printStackTrace();
             System.exit(0);
         }
@@ -85,8 +88,8 @@ public class MIPSsim {
 
     private void issue(){ //no modification to token
         addr();
-        asu();
         mlu1();
+        asu();
         if (INB == null) { // no token in INB
             SIB = null;
             AIB = null;
@@ -100,7 +103,9 @@ public class MIPSsim {
     }
 
     private void asu(){
-        write(1);
+        if (REB_reg[1] != null && REB_reg[0] == null ) {
+            write(1);
+        }
         if(AIB != null && AIB.opcode == Instruction.ADD){
             REB_reg[1] = AIB.destination;
             REB_value[1] = AIB.data1 + AIB.data2;
@@ -151,58 +156,59 @@ public class MIPSsim {
     }
 
     private void write(int index){
+
         if(REB_reg[index] != null){
             RGF.put(REB_reg[index],REB_value[index]);
         }
     }
 
     private void print(){
-        System.out.println("STEP " + stepNumber + ":");
+        writer.println("STEP " + stepNumber + ":");
 
-        System.out.print("INM:");
-        int i = 0;
+        writer.print("INM:");
+        int i ;
         String s = "";
         for (InstructionToken t:INM) {
             s += "<" + t.opcode + "," + t.destination + "," + t.source1 + "," + t.source2 + ">,";
         }
         if (s.length() > 0) {
-            System.out.println(s.substring(0, s.length() - 1));
+            writer.println(s.substring(0, s.length() - 1));
         } else {
-            System.out.println();
+            writer.println();
         }
 
-        System.out.print("INB:");
-        if (INB == null){ System.out.println(); }
-        else { System.out.println(INB.toString()); }
+        writer.print("INB:");
+        if (INB == null){ writer.println(); }
+        else { writer.println(INB.toString()); }
 
-        System.out.print("AIB:");
-        if (AIB == null){ System.out.println(); }
-        else { System.out.println(AIB.toString()); }
+        writer.print("AIB:");
+        if (AIB == null){ writer.println(); }
+        else { writer.println(AIB.toString()); }
 
-        System.out.print("SIB:");
-        if (SIB == null){ System.out.println(); }
-        else { System.out.println(SIB.toString()); }
+        writer.print("SIB:");
+        if (SIB == null){ writer.println(); }
+        else { writer.println(SIB.toString()); }
 
-        System.out.print("PRB:");
-        if (PRB == null){ System.out.println(); }
-        else { System.out.println(PRB.toString()); }
+        writer.print("PRB:");
+        if (PRB == null){ writer.println(); }
+        else { writer.println(PRB.toString()); }
 
-        System.out.print("ADB:");
-        if (ADB_reg == null){ System.out.println(); }
-        else { System.out.println("<" + ADB_reg + "," + ADB_value + ">"); }
+        writer.print("ADB:");
+        if (ADB_reg == null){ writer.println(); }
+        else { writer.println("<" + ADB_reg + "," + ADB_value + ">"); }
 
-        System.out.print("REB:");
+        writer.print("REB:");
         if (REB_reg[0] != null && REB_reg[1] != null){
-            System.out.println("<" + REB_reg[0] + "," + REB_value[0] + ">,<" + REB_reg[1] + "," + REB_value[1] + ">");
+            writer.println("<" + REB_reg[0] + "," + REB_value[0] + ">,<" + REB_reg[1] + "," + REB_value[1] + ">");
         } else if (REB_reg[0] != null) {
-            System.out.println("<" + REB_reg[0] + "," + REB_value[0] + ">");
+            writer.println("<" + REB_reg[0] + "," + REB_value[0] + ">");
         } else if (REB_reg[1] != null) {
-            System.out.println("<" + REB_reg[1] + "," + REB_value[1] + ">");
+            writer.println("<" + REB_reg[1] + "," + REB_value[1] + ">");
         } else {
-            System.out.println();
+            writer.println();
         }
 
-        System.out.print("RGF:");
+        writer.print("RGF:");
         s = "";
         for (Register r: Register.values()){
             Integer value = RGF.get(r);
@@ -211,12 +217,12 @@ public class MIPSsim {
             }
         }
         if (s.length() > 0) {
-            System.out.println(s.substring(0, s.length() - 1)); // removes last comma
+            writer.println(s.substring(0, s.length() - 1)); // removes last comma
         } else {
-            System.out.println();
+            writer.println();
         }
 
-        System.out.print("DAM:");
+        writer.print("DAM:");
         s = "";
         for (i = 0; i < 16; i++){
             Integer value = DAM.get(i);
@@ -225,13 +231,13 @@ public class MIPSsim {
             }
         }
         if (s.length() > 0) {
-            System.out.println(s.substring(0, s.length() - 1)); // removes last comma
+            writer.println(s.substring(0, s.length() - 1)); // removes last comma
         } else {
-            System.out.println();
+            writer.println();
         }
 
 
-        System.out.println();
+        writer.println();
     }
 
 
