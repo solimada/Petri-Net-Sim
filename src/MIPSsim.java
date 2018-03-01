@@ -1,6 +1,5 @@
 import java.io.*;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
 
@@ -39,7 +38,7 @@ public class MIPSsim {
 
     public MIPSsim(){
         try {
-            writer = new PrintWriter("output.txt");
+            writer = new PrintWriter("simulation.txt");
             List<String> temp = Files.readAllLines(Paths.get(REGISTERFILE));
             for (String t:temp) {
                 String [] tokenAsString = t.replace("<","").replace(">","").split(",");
@@ -103,9 +102,6 @@ public class MIPSsim {
     }
 
     private void asu(){
-        if (REB_reg[1] != null && REB_reg[0] == null ) {
-            write(1);
-        }
         if(AIB != null && AIB.opcode == Instruction.ADD){
             REB_reg[1] = AIB.destination;
             REB_value[1] = AIB.data1 + AIB.data2;
@@ -156,9 +152,10 @@ public class MIPSsim {
     }
 
     private void write(int index){
-
-        if(REB_reg[index] != null){
-            RGF.put(REB_reg[index],REB_value[index]);
+        if(REB_reg[0] != null){
+            RGF.put(REB_reg[0],REB_value[0]);
+        } else if (REB_reg[1] != null){
+            RGF.put(REB_reg[1],REB_value[1]);
         }
     }
 
