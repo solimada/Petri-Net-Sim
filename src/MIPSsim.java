@@ -9,6 +9,8 @@ public class MIPSsim {
     private static final String DATAFILE = "datamemory.txt";
     private static final String INSTRUCTIONFILE = "instructions.txt";
 
+    int stepNumber = 0;
+
     private List<InstructionToken> INM = new ArrayList<>();
 
     InstructionToken INB = null;
@@ -51,11 +53,12 @@ public class MIPSsim {
     }
 
     public void simulate(){
+        print(); // print step 0
         readAndDecode();
         print();
     }
 
-    public void readAndDecode(){
+    private void readAndDecode(){
         InstructionToken temp;
         if(INM.isEmpty()){
             temp = null;
@@ -68,10 +71,10 @@ public class MIPSsim {
         }
         issue();
         INB = temp;
+        ++stepNumber;
     }
 
-    public void issue(){ //no modification to token
-        InstructionToken temp = INB;
+    private void issue(){ //no modification to token
         addr();
         asu();
         mlu1();
@@ -79,15 +82,15 @@ public class MIPSsim {
             SIB = null;
             AIB = null;
         } else if (INB.opcode == Instruction.ST){
-            SIB = temp;
+            SIB = INB;
             AIB = null;
         } else { //ADD SUB or MUL
             SIB = null;
-            AIB = temp;
+            AIB = INB;
         }
     }
 
-    public void asu(){
+    private void asu(){
         write(1);
         if(AIB != null && AIB.opcode == Instruction.ADD){
             REB_reg[1] = AIB.destination;
@@ -101,7 +104,7 @@ public class MIPSsim {
         }
     }
 
-    public void mlu1(){
+    private void mlu1(){
         InstructionToken temp = null;
         if (AIB != null && AIB.opcode == Instruction.MUL){
             temp = AIB;
@@ -110,7 +113,7 @@ public class MIPSsim {
         PRB = temp;
     }
 
-    public void mlu2(){ // index 0 in REB []
+    private void mlu2(){ // index 0 in REB []
         write(0);
         if (PRB != null){
             REB_reg[0] = PRB.destination;
@@ -121,36 +124,97 @@ public class MIPSsim {
         }
     }
 
-    public void addr(){
-        Register temp_reg;
-        int temp_value;
-        if(SIB != null){
-            temp_reg = SIB.destination;
-            temp_value = SIB.data1 + SIB.data2;
-        } else {
-            temp_reg = null;
-            temp_value = 0;
-        }
-
+    private void addr(){
         store();
-        ADB_reg = temp_reg;
-        ADB_value = temp_value;
+        if(SIB != null){
+            ADB_reg = SIB.destination;
+            ADB_value = SIB.data1 + SIB.data2;
+        } else {
+            ADB_reg = null;
+            ADB_value = 0;
+        }
     }
 
-    public void store(){
+    private void store(){
         if(ADB_reg != null){
             DAM.put(ADB_value,RGF.get(ADB_reg));
         }
     }
 
-    public void write(int index){
+    private void write(int index){
         if(REB_reg[index] != null){
             RGF.put(REB_reg[index],REB_value[index]);
         }
     }
 
-    public void print(){
+    private void print(){
+        System.out.println("STEP " + stepNumber + ":");
 
+        System.out.print("INM:");
+        int i = 0;
+        for (InstructionToken t:INM) {
+            if (i < 15) {
+                System.out.print("<" + t.opcode + "," + t.destination + "," + t.source1 + "," + t.source2 + ">,");
+            } else {
+                System.out.print("<" + t.opcode + "," + t.destination + "," + t.source1 + "," + t.source2 + ">");
+                break;
+            }
+
+            ++i;
+        }
+
+        System.out.print("INB:");
+        if (INB == null){ System.out.println(); }
+        else { System.out.println(INB.toString()); }
+
+        System.out.print("AIB:");
+        if (AIB == null){ System.out.println(); }
+        else { System.out.println(AIB.toString()); }
+
+        System.out.print("SIB:");
+        if (SIB == null){ System.out.println(); }
+        else { System.out.println(SIB.toString()); }
+
+        System.out.print("PRB:");
+        if (PRB == null){ System.out.println(); }
+        else { System.out.println(PRB.toString()); }
+
+        System.out.print("ADB:");
+        if (ADB_reg == null){ System.out.println(); }
+        else { System.out.println("<" + ADB_reg + "," + ADB_value + ">"); }
+
+        System.out.print("REB:");
+        if (REB_reg[0] != null && REB_reg[1] != null){
+            System.out.println("<" + REB_reg[0] + "," + REB_reg[0] + ">,<" + REB_reg[1] + "," + REB_reg[1] + ">");
+        } else if (REB_reg[0] != null) {
+            System.out.println("<" + REB_reg[0] + "," + REB_reg[0] + ">");
+        } else if (REB_reg[1] != null) {
+            System.out.println("<" + REB_reg[1] + "," + REB_reg[1] + ">");
+        } else {
+            System.out.println();
+        }
+
+        System.out.print("RGF:");
+        String s = "";
+        for (Register r: Register.values()){
+            Integer value = RGF.get(r);
+            if (value != null){
+                s += "<" + r + "," + value + ">,";
+            }
+        }
+        System.out.println(s.substring(0,s.length()-1)); // removes last comma
+
+        System.out.print("DAM:");
+        s = "";
+        for (i = 0; i < 16; i++){
+            Integer value = DAM.get(i);
+            if (value != null){
+                s += "<" + i + "," + value + ">,";
+            }
+        }
+        System.out.println(s.substring(0,s.length()-1)); // removes last comma
+
+        System.out.println();
     }
 
 
@@ -168,7 +232,7 @@ class InstructionToken{
     int data2;
     boolean isStore = false;
 
-    public InstructionToken(String token){
+    InstructionToken(String token){
         String temp [] = token.replace("<","").replace(">","").split(",");
         opcode = Instruction.valueOf(temp[0]);
         destination = Register.valueOf(temp[1]);
@@ -180,27 +244,8 @@ class InstructionToken{
         }
     }
 
-}
-
-/*
-class RegisterToken{
-    Register registerName;
-    int value;
-    public RegisterToken(String token){
-        String temp [] = token.replace("<","").replace(">","").split(",");
-        registerName = Register.valueOf(temp[0]);
-        value = Integer.parseInt(temp[1]);
+    public String toString(){
+        return "<" + opcode + "," + destination + "," + source1 + "," + source2 + ">";
     }
-}
 
-class AddressToken{
-    int address;
-    int value;
-    public AddressToken(String token){
-        String temp [] = token.replace("<","").replace(">","").split(",");
-        address = Integer.parseInt(temp[0]);
-        value = Integer.parseInt(temp[1]);
-    }
 }
-
-*/
